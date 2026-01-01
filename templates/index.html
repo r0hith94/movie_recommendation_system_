@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1f2020 0%, #3c3b3d 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box label {
+            display: block;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #movieInput {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #5d5b5b;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #movieInput:focus {
+            border-color: #131415;
+        }
+
+        #topNInput {
+            width: 100px;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #9295a4;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .autocomplete-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #f0f0f0;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #1a1b1d 0%, #171618 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #595b63;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #666874;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .matched-movie {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .matched-poster {
+            width: 150px;
+            height: 225px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .matched-info {
+            flex: 1;
+        }
+
+        .matched-info h2 {
+            color: #6b6d79;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .matched-info p {
+            font-size: 1.8em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .recommendations {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendations h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        .movie-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .movie-info {
+            padding: 15px;
+        }
+
+        .movie-rank {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15, 15, 15, 0.95);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .movie-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            min-height: 40px;
+        }
+
+        .similarity-score {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .similarity-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .similarity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .error-message {
+            display: none;
+            background: #ff4757;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .search-section {
+                padding: 25px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            #topNInput {
+                width: 100%;
+            }
+
+            .matched-movie {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .movie-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .movie-poster {
+                height: 225px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Movie Recommendation System</h1>
+            <p>Discover your next favorite movie based on what you love!</p>
+        </header>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <label for="movieInput">Enter a movie you like:</label>
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="movieInput" 
+                        placeholder="e.g., Iron Man, Avatar, The Dark Knight..."
+                        autocomplete="off"
+                    >
+                    <input 
+                        type="number" 
+                        id="topNInput" 
+                        placeholder="Top N" 
+                        value="20"
+                        min="5"
+                        max="50"
+                    >
+                </div>
+                <div class="autocomplete-results" id="autocompleteResults"></div>
+            </div>
+            <button onclick="getRecommendations()" id="searchBtn">
+                Get Recommendations
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Finding perfect movies for you...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="matched-movie" id="matchedMovie"></div>
+            <div class="recommendations">
+                <h2>Recommended Movies for You</h2>
+                <div class="movie-grid" id="movieGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autocompleteTimeout;
+        const movieInput = document.getElementById('movieInput');
+        const autocompleteResults = document.getElementById('autocompleteResults');
+
+        // Autocomplete functionality
+        movieInput.addEventListener('input', function() {
+            clearTimeout(autocompleteTimeout);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                autocompleteResults.style.display = 'none';
+                return;
+            }
+
+            autocompleteTimeout = setTimeout(() => {
+                fetch(`/autocomplete?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            autocompleteResults.innerHTML = data
+                                .map(movie => `<div class="autocomplete-item" onclick="selectMovie('${movie.replace(/'/g, "\\'")}')">${movie}</div>`)
+                                .join('');
+                            autocompleteResults.style.display = 'block';
+                        } else {
+                            autocompleteResults.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Autocomplete error:', error);
+                    });
+            }, 300);
+        });
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box')) {
+                autocompleteResults.style.display = 'none';
+            }
+        });
+
+        // Select movie from autocomplete
+        function selectMovie(movie) {
+            movieInput.value = movie;
+            autocompleteResults.style.display = 'none';
+        }
+
+        // Allow Enter key to trigger search
+        movieInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getRecommendations();
+            }
+        });
+
+        async function getRecommendations() {
+            const movieName = movieInput.value.trim();
+            const topN = parseInt(document.getElementById('topNInput').value) || 20;
+            
+            // Hide previous results and errors
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            // Validate input
+            if (!movieName) {
+                showError('Please enter a movie name');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('searchBtn').disabled = true;
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        movie_name: movieName,
+                        top_n: topN
+                    })
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('searchBtn').disabled = false;
+
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    showError(data.message);
+                }
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('searchBtn').disabled = false;
+                showError('Network error. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        function displayResults(data) {
+            // Display matched movie with poster
+            const matchedMovieDiv = document.getElementById('matchedMovie');
+            matchedMovieDiv.innerHTML = `
+                <img src="${data.matched_poster}" alt="${data.matched_movie}" class="matched-poster" onerror="this.src='https://via.placeholder.com/150x225/667eea/ffffff?text=No+Poster'">
+                <div class="matched-info">
+                    <h2>You searched for:</h2>
+                    <p>"${data.matched_movie}"</p>
+                </div>
+            `;
+
+            // Display recommendations with posters
+            const movieGrid = document.getElementById('movieGrid');
+            
+            if (data.recommendations.length === 0) {
+                movieGrid.innerHTML = `
+                    <div class="no-results">
+                        <p>No recommendations found.</p>
+                    </div>
+                `;
+            } else {
+                movieGrid.innerHTML = data.recommendations.map(movie => `
+                    <div class="movie-card">
+                        <div class="movie-rank">#${movie.rank}</div>
+                        <img src="${movie.poster_url}" alt="${movie.title}" class="movie-poster" onerror="this.src='https://via.placeholder.com/200x300/667eea/ffffff?text=No+Poster'">
+                        <div class="movie-info">
+                            <div class="movie-title">${movie.title}</div>
+                            <div class="similarity-score">
+                                Match: ${(movie.similarity_score * 100).toFixed(1)}%
+                            </div>
+                            <div class="similarity-bar">
+                                <div class="similarity-fill" style="width: ${movie.similarity_score * 100}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Show results
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Smooth scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    </script>
+</body>
+</html>
