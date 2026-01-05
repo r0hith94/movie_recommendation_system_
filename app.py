@@ -11,6 +11,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 import logging
 import requests
 from functools import lru_cache
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +26,7 @@ app = Flask(__name__)
 
 # TMDb API Configuration
 # REPLACE THIS WITH YOUR ACTUAL API KEY FROM TMDb
-TMDB_API_KEY = "ab678aa4ce9dc609001b425f8d262d78"
+
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
