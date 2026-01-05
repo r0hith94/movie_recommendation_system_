@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+TMDB_API_KEY = os.getenv("GROQ_TMDB_KEY")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
